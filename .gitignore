@@ -1,2 +1,6 @@
 Targets/
 ScanOutputs/
+data/
+__pycache__/
+scanOutputs/
+.cache
