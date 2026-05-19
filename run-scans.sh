@@ -14,6 +14,7 @@ SEMGREP_OUTPUT="${OUTPUT_DIR}/semgrep.json"
 TRIVY_OUTPUT="${OUTPUT_DIR}/trivy.json"
 OWASP_OUTPUT="${OUTPUT_DIR}/dependency-check-report.json"
 SNYK_OUTPUT="${OUTPUT_DIR}/snyk.json"
+SNYK_IMAGE="snyk/snyk:maven"
 
 require_cmd() {
 	if ! command -v "$1" >/dev/null 2>&1; then
@@ -113,15 +114,16 @@ if [[ -n "${SNYK_TOKEN:-}" ]]; then
 	snyk_exit=0
 	if docker run --rm \
 		--user "${HOST_UID}:${HOST_GID}" \
+		--entrypoint snyk \
 		-e SNYK_TOKEN="${SNYK_TOKEN}" \
 		-v "${TARGET_DIR}:/project" \
 		-v "${OUTPUT_DIR}:/out" \
 		-w /project \
-		snyk/snyk-cli:latest \
-		test --all-projects --json-file-output=/out/snyk.json; then
+		"${SNYK_IMAGE}" \
+		test --file=pom.xml --package-manager=maven --json-file-output=/out/snyk.json; then
 		snyk_exit=0
 	else
-    echo 'Snyk token not found' >&2
+		echo "WARN: Snyk command failed (auth/network/project resolution issue)." >&2
 		snyk_exit=$?
 	fi
 

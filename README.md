@@ -1,10 +1,19 @@
 # Thesis
 
+## Running the scripts
+1. Clone the repository
+2. Install docker
+3. export your SNYK_TOKEN as an environment variable (export SNYK_TOKEN=your_token_here)
+4. run the alert generator script (sudo --preserve-env=SNYK_TOKEN ./run.scans.sh)
+5. After successfully getting the alerts, run the main.py script to parse, aggregate, and deduplicate the alerts (python3 main.py)
+6. Final JSON outputs will be in the data/ directory with a summary report
+
 ## Generating Alerts
 Alert generator script is created, tools might be swapped around and the target repo needs to be renamed before running. The script will run the following tools:
 - Semgrep (code patterns)
 - Trivy (dependencies + secrets)
 - OWASP (dependencies)
+- Snyk (dependencies)
 
 ## Script Archetecture
 Raw tool outputs
@@ -27,7 +36,8 @@ project/
 │   ├── __init__.py
 │   ├── trivy_parser.py
 │   ├── owasp_parser.py
-│   └── semgrep_parser.py
+│   ├── semgrep_parser.py
+│   └── snyk_parser.py
 ├── aggregator.py
 ├── deduplicator.py
 └── statistics.py
@@ -44,7 +54,7 @@ statistics.py: measures alert counts before and after deduplication
 main.py
   -> tells each parser to parse its own tool output
 
-trivy_parser.py / owasp_parser.py / semgrep_parser.py
+trivy_parser.py / owasp_parser.py / semgrep_parser.py / snyk_parser.py
   -> each return normalized Alert objects to main.py
 
 main.py

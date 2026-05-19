@@ -58,7 +58,11 @@ def _extract_fixed_version(vuln: dict) -> str | None:
 
 
 def _extract_rule_id(vuln: dict) -> str | None:
-    return vuln.get("identifiers", {}).get("CVE", [None])[0] or vuln.get("id")
+    identifiers = vuln.get("identifiers", {})
+    cves = identifiers.get("CVE", [])
+    if isinstance(cves, list) and cves:
+        return cves[0]
+    return vuln.get("id")
 
 
 def _extract_cve(vuln: dict) -> str | None:

@@ -15,12 +15,36 @@ def _highest_severity(severities: list[str]) -> str:
     return max(severities, key=lambda s: SEVERITY_ORDER.get(s, 0))
 
 
+def _canonical_dependency_name(package_name: str) -> str:
+    value = package_name.strip().lower()
+
+    # Normalize purl-style package identifiers (e.g. pkg:maven/g:a@1.0, pkg:javascript/jquery@3.7.1)
+    if value.startswith("pkg:"):
+        core = value[4:]
+        if "/" in core:
+            _, core = core.split("/", 1)
+        if "?" in core:
+            core = core.split("?", 1)[0]
+        if "#" in core:
+            core = core.split("#", 1)[0]
+        if "@" in core:
+            core = core.split("@", 1)[0]
+        value = core
+
+    # Strip trailing version suffixes for non purl names like `jquery@1.10.2.min`.
+    if "@" in value and ":" not in value:
+        value = value.split("@", 1)[0]
+
+    return value
+
+
 def _dependency_dedup_key(alert: Alert) -> str | None:
     if alert.category != "dependency":
         return None
     if not alert.package_name or not alert.cve:
         return None
-    return f"{alert.package_name.lower()}::{alert.cve.upper()}"
+    package = _canonical_dependency_name(alert.package_name)
+    return f"{package}::{alert.cve.upper()}"
 
 
 def _code_dedup_key(alert: Alert) -> str | None:

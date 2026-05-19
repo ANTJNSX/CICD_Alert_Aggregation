@@ -1,7 +1,10 @@
 import json
+import re
 from pathlib import Path
 
 from alert_model import Alert
+
+CVE_PATTERN = re.compile(r"\bCVE-\d{4}-\d{4,7}\b", re.IGNORECASE)
 
 OWASP_SEVERITY_MAP = {
     "CRITICAL": "critical",
@@ -66,6 +69,17 @@ def extract_cwe(vulnerability: dict) -> str | None:
     return None
 
 
+def extract_cve(vulnerability: dict) -> str | None:
+    # OWASP `name` may be a CVE, GHSA, or free-text. Keep only normalized CVE IDs.
+    for candidate in (vulnerability.get("name"), vulnerability.get("description")):
+        if not isinstance(candidate, str):
+            continue
+        match = CVE_PATTERN.search(candidate)
+        if match:
+            return match.group(0).upper()
+    return None
+
+
 def parse_owasp(file_path: Path) -> list[Alert]:
     with file_path.open("r", encoding="utf-8") as f:
         data = json.load(f)
@@ -85,6 +99,7 @@ def parse_owasp(file_path: Path) -> list[Alert]:
 
         for vuln in vulnerabilities:
             cvss_score = extract_cvss_score(vuln)
+            cve = extract_cve(vuln)
 
             alert = Alert(
                 id=f"owasp-{counter}",
@@ -94,7 +109,7 @@ def parse_owasp(file_path: Path) -> list[Alert]:
                 title=vuln.get("name"),
                 description=vuln.get("description"),
                 severity=normalize_owasp_severity(vuln.get("severity"), cvss_score),
-                cve=vuln.get("name"),
+                cve=cve,
                 cwe=extract_cwe(vuln),
                 package_name=package_name,
                 installed_version=None,
@@ -104,6 +119,7 @@ def parse_owasp(file_path: Path) -> list[Alert]:
                 raw_source=str(file_path),
                 metadata={
                     "cvss_score": cvss_score,
+                    "owasp_vulnerability_name": vuln.get("name"),
                     "is_virtual": dependency.get("isVirtual"),
                     "file_path": dependency.get("filePath"),
                 },
