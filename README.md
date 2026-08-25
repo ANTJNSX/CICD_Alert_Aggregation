@@ -7,6 +7,7 @@
 4. run the alert generator script (sudo --preserve-env=SNYK_TOKEN ./run.scans.sh)
 5. After successfully getting the alerts, run the main.py script to parse, aggregate, and deduplicate the alerts (python3 main.py)
 6. Final JSON outputs will be in the data/ directory with a summary report
+7. If you already have normalized + deduplicated JSON and only want to refresh statistics (no scanner rerun), run `python3 recompute_statistics.py WebGoat`
 
 ## Generating Alerts
 Alert generator script is created, tools might be swapped around and the target repo needs to be renamed before running. The script will run the following tools:
@@ -48,7 +49,8 @@ alert_model.py: defines the shared alert structure
 parsers/*.py: convert raw tool JSON into normalized alerts
 aggregator.py: combines all parsed alerts into one collection
 deduplicator.py: detects and merges duplicate alerts
-statistics.py: measures alert counts before and after deduplication
+statistics.py: measures alert counts before and after deduplication (including by-tool counts after dedup)
+recompute_statistics.py: regenerates statistics from existing normalized/deduplicated JSON files
 
 ## Flow
 main.py

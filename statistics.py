@@ -7,6 +7,15 @@ def _count_by_tool(alerts: list[Alert]) -> dict[str, int]:
     return dict(Counter(alert.tool for alert in alerts))
 
 
+def _count_by_tool_dedup(alerts: list[DeduplicatedAlert]) -> dict[str, int]:
+    # Count each deduplicated alert once, assigned to its first listed tool.
+    tool_counter: Counter[str] = Counter()
+    for alert in alerts:
+        if alert.tools:
+            tool_counter[alert.tools[0]] += 1
+    return dict(tool_counter)
+
+
 def _count_by_category_raw(alerts: list[Alert]) -> dict[str, int]:
     return dict(Counter(alert.category for alert in alerts))
 
@@ -36,6 +45,7 @@ def generate_statistics(
         },
         "after_deduplication": {
             "total_alerts": len(deduplicated_alerts),
+            "by_tool": _count_by_tool_dedup(deduplicated_alerts),
             "by_category": _count_by_category_dedup(deduplicated_alerts),
             "by_severity": _count_by_severity_dedup(deduplicated_alerts),
         },
